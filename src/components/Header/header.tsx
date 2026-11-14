@@ -35,7 +35,7 @@ export default function Header() {
         ))}
 
         <Link
-          href="/resume"
+          href="/login"
           className="grid min-w-[110px] min-h-11 place-items-center border border-white rounded-lg text-white font-medium no-underline hover:bg-white hover:text-[#925807] transition-colors"
         >
           Login
