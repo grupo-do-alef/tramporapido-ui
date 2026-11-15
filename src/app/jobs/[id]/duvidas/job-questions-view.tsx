@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import RepresentativeShell from "../../representative-shell";
 import styles from "./duvidas.module.css";
 
 interface Question {
@@ -36,10 +36,32 @@ const initialQuestions: Question[] = [
 ];
 
 export default function JobQuestionsView() {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   const [newQuestion, setNewQuestion] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [feedback, setFeedback] = useState("");
+
+  useEffect(() => {
+    const hasToken = document.cookie.includes("token=");
+
+    if (!hasToken) {
+      router.replace("/login");
+      return;
+    }
+
+    setIsAuthorized(true);
+  }, [router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex w-full items-center justify-center p-12">
+        <p className="text-sm text-neutral-500">Verificando sessão...</p>
+      </div>
+    );
+  }
 
   function handleSendQuestion(e: FormEvent) {
     e.preventDefault();
@@ -61,94 +83,90 @@ export default function JobQuestionsView() {
   }
 
   return (
-    <RepresentativeShell>
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <div>
-            <Link href="/jobs" className={styles.backLink}>
-              ← Voltar às vagas
-            </Link>
-            <h1>Dúvidas e Comentários</h1>
-            <p className={styles.subtitle}>
-              Auxiliar Administrativo • São Paulo, SP
-            </p>
-          </div>
-        </div>
-
-        {/* Formulário para envio de nova dúvida */}
-        <section className={styles.card}>
-          <h2>Tem alguma pergunta sobre a vaga?</h2>
-          <p className={styles.hint}>
-            As perguntas públicas ajudam outros candidatos a compreender os
-            requisitos da oportunidade.
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div>
+          <Link href="/jobs" className={styles.backLink}>
+            ← Voltar às vagas
+          </Link>
+          <h1>Dúvidas e Comentários</h1>
+          <p className={styles.subtitle}>
+            Auxiliar Administrativo • São Paulo, SP
           </p>
-
-          <form onSubmit={handleSendQuestion} className={styles.form}>
-            <div className={styles.inputGroup}>
-              <label htmlFor="author">O seu nome</label>
-              <input
-                id="author"
-                type="text"
-                required
-                placeholder="Ex.: Carolina Santos"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-              />
-            </div>
-
-            <div className={styles.inputGroup}>
-              <label htmlFor="question">A sua dúvida</label>
-              <textarea
-                id="question"
-                rows={3}
-                required
-                placeholder="Escreva aqui a sua dúvida detalhada..."
-                value={newQuestion}
-                onChange={(e) => setNewQuestion(e.target.value)}
-              />
-            </div>
-
-            <button type="submit" className={styles.primaryBtn}>
-              Enviar pergunta
-            </button>
-
-            {feedback && <p className={styles.successMessage}>{feedback}</p>}
-          </form>
-        </section>
-
-        {/* Lista de dúvidas enviadas e respostas oficiais */}
-        <section className={styles.listSection}>
-          <h2>Perguntas frequentes e da comunidade ({questions.length})</h2>
-
-          <div className={styles.questionsList}>
-            {questions.map((q) => (
-              <article key={q.id} className={styles.questionCard}>
-                <div className={styles.questionHeader}>
-                  <strong>{q.author}</strong>
-                  <span className={styles.date}>{q.date}</span>
-                </div>
-                <p className={styles.questionText}>{q.text}</p>
-
-                {q.answer ? (
-                  <div className={styles.replyBox}>
-                    <div className={styles.replyHeader}>
-                      <span className={styles.badgeRepresentante}>
-                        Resposta da Empresa
-                      </span>
-                      <span className={styles.date}>{q.answeredAt}</span>
-                    </div>
-                    <p className={styles.replyText}>{q.answer}</p>
-                  </div>
-                ) : (
-                  <p className={styles.pendingAnswer}>
-                    Aguardando resposta da empresa...
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
+        </div>
       </div>
-    </RepresentativeShell>
+
+      <section className={styles.card}>
+        <h2>Tem alguma pergunta sobre a vaga?</h2>
+        <p className={styles.hint}>
+          As perguntas públicas ajudam outros candidatos a compreender os
+          requisitos da oportunidade.
+        </p>
+
+        <form onSubmit={handleSendQuestion} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="author">O seu nome</label>
+            <input
+              id="author"
+              type="text"
+              required
+              placeholder="Ex.: Carolina Santos"
+              value={authorName}
+              onChange={(e) => setAuthorName(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label htmlFor="question">A sua dúvida</label>
+            <textarea
+              id="question"
+              rows={3}
+              required
+              placeholder="Escreva aqui a sua dúvida detalhada..."
+              value={newQuestion}
+              onChange={(e) => setNewQuestion(e.target.value)}
+            />
+          </div>
+
+          <button type="submit" className={styles.primaryBtn}>
+            Enviar pergunta
+          </button>
+
+          {feedback && <p className={styles.successMessage}>{feedback}</p>}
+        </form>
+      </section>
+
+      <section className={styles.listSection}>
+        <h2>Perguntas frequentes e da comunidade ({questions.length})</h2>
+
+        <div className={styles.questionsList}>
+          {questions.map((q) => (
+            <article key={q.id} className={styles.questionCard}>
+              <div className={styles.questionHeader}>
+                <strong>{q.author}</strong>
+                <span className={styles.date}>{q.date}</span>
+              </div>
+              <p className={styles.questionText}>{q.text}</p>
+
+              {q.answer ? (
+                <div className={styles.replyBox}>
+                  <div className={styles.replyHeader}>
+                    <span className={styles.badgeRepresentante}>
+                      Resposta da Empresa
+                    </span>
+                    <span className={styles.date}>{q.answeredAt}</span>
+                  </div>
+                  <p className={styles.replyText}>{q.answer}</p>
+                </div>
+              ) : (
+                <p className={styles.pendingAnswer}>
+                  Aguardando resposta da empresa...
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

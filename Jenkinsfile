@@ -29,7 +29,7 @@ pipeline {
         stage('Instalar, verificar e montar') {
             steps {
                 sh '''
-                    docker run --rm --volumes-from "$HOSTNAME" -w "$SOURCE_DIR" \
+                    docker run --rm --volumes-from "$HOSTNAME" -w "$WORKSPACE/source" \
                       node:22-bookworm-slim sh -c 'npm ci && npm run lint && npm run build'
                 '''
             }
@@ -56,10 +56,10 @@ pipeline {
                     sh '''
                         . ./.ec2.env
                         UI_ORIGIN="http://${PUBLIC_IP}:3000"
-                        cd "$SOURCE_DIR"
+                        cd "$WORKSPACE/source"
                         /workspace/jenkins/scripts/deploy-compose.sh \
                           tramporapido-ui "$PUBLIC_IP" \
-                          "http://${TASK_PUBLIC_IP}:8081" "http://${USER_PUBLIC_IP}:8080"
+                          "$API_ENDPOINT" "$API_ENDPOINT"
                         /workspace/jenkins/scripts/refresh-cors.sh user-service "$USER_PUBLIC_IP" "$UI_ORIGIN"
                         /workspace/jenkins/scripts/refresh-cors.sh task-service "$TASK_PUBLIC_IP" "$UI_ORIGIN"
                     '''

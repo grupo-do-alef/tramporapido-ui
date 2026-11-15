@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import RepresentativeShell from "../representative-shell";
 import styles from "../registrar/registration.module.css";
 
 interface Duvida {
@@ -22,8 +22,10 @@ export default function VagaDetalhePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const router = useRouter();
   const { id } = use(params);
 
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [activeView, setActiveView] = useState<
     "resumo" | "candidaturas" | "duvidas"
   >("resumo");
@@ -44,6 +46,25 @@ export default function VagaDetalhePage({
     },
   ]);
 
+  useEffect(() => {
+    const hasToken = document.cookie.includes("token=");
+
+    if (!hasToken) {
+      router.replace("/login");
+      return;
+    }
+
+    setIsAuthorized(true);
+  }, [router]);
+
+  if (!isAuthorized) {
+    return (
+      <div className="flex w-full items-center justify-center p-8">
+        <p className="text-sm text-neutral-500">Verificando sessão...</p>
+      </div>
+    );
+  }
+
   function handleEnviarPergunta(e: React.FormEvent) {
     e.preventDefault();
     if (!novaPergunta.trim()) return;
@@ -63,14 +84,13 @@ export default function VagaDetalhePage({
   }
 
   return (
-    <RepresentativeShell>
+    <>
       <h1>Gerenciamento da vaga</h1>
       <p className={styles.hint}>
         Nº {id.substring(0, 8)} • Informações detalhadas da oportunidade
       </p>
 
       <div className={styles.publishedColumns}>
-        {/* Coluna Principal: Alterna entre Resumo, Candidaturas e Dúvidas */}
         <section className={`${styles.card} ${styles.summary}`}>
           {activeView === "resumo" && (
             <>
@@ -225,6 +245,6 @@ export default function VagaDetalhePage({
           </Link>
         </nav>
       </div>
-    </RepresentativeShell>
+    </>
   );
 }

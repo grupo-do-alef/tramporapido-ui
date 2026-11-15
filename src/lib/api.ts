@@ -1,5 +1,6 @@
-const TASK_API_URL = process.env.NEXT_PUBLIC_TASK_API_URL ?? "http://localhost:8081";
-const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL ?? "http://localhost:8080";
+const TASK_API_URL =
+  process.env.NEXT_PUBLIC_TASK_API_URL ?? "http://localhost:8081";
+const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL ?? "";
 
 export type Task = {
   id: string;
@@ -15,15 +16,45 @@ export type Task = {
   income?: number;
 };
 
-async function request<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
+function getTokenFromCookie(): string | null {
+  if (typeof window === "undefined") return null;
+  const match = document.cookie.match(/(^|;\s*)token=([^;]*)/);
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+async function request<T>(
+  baseUrl: string,
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const token = getTokenFromCookie();
+  const isAuthRoute = path.includes("/auth/");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(!isAuthRoute && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(init?.headers as Record<string, string>),
+  };
+
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers,
     credentials: "include",
   });
+
+  if ((response.status === 401 || response.status === 403) && !isAuthRoute) {
+    if (typeof window !== "undefined") {
+      document.cookie = "token=; path=/; max-age=0";
+      window.location.href = "/login";
+    }
+    throw new Error("Sessão expirada.");
+  }
+
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(body || `Erro ${response.status} ao comunicar com o serviço.`);
+    throw new Error(
+      body || `Erro ${response.status} ao comunicar com o serviço.`,
+    );
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -32,15 +63,40 @@ async function request<T>(baseUrl: string, path: string, init?: RequestInit): Pr
 export const taskApi = {
   list: () => request<Task[]>(TASK_API_URL, "/tasks"),
   create: (task: Omit<Task, "id"> & { idemployer?: string }) =>
-    request<Task>(TASK_API_URL, "/tasks", { method: "POST", body: JSON.stringify(task) }),
+    request<Task>(TASK_API_URL, "/tasks", {
+      method: "POST",
+      body: JSON.stringify(task),
+    }),
 };
 
 export const userApi = {
-  csrf: () => request<{ token: string }>(USER_API_URL, "/api/auth/csrf"),
-  login: (email: string, password: string, csrfToken: string) =>
-    request<{ id: string; email: string; role: "CANDIDATE" | "CONTRACTOR" | "INTERMEDIARY" | "ADMINISTRATOR"; message: string }>(USER_API_URL, "/api/auth/login", {
+  login: async (email: string, password: string) => {
+    const data = await request<{
+      id: string;
+      email: string;
+      role: "CANDIDATE" | "CONTRACTOR" | "INTERMEDIARY" | "ADMINISTRATOR";
+      message: string;
+      accessToken: string;
+    }>(USER_API_URL, "/api/auth/login", {
       method: "POST",
-      headers: { "X-XSRF-TOKEN": csrfToken },
       body: JSON.stringify({ email, password }),
-    }),
+    });
+
+    if (data?.accessToken && typeof window !== "undefined") {
+      document.cookie = `token=${data.accessToken}; path=/; max-age=604800; SameSite=Lax`;
+    }
+
+    return data;
+  },
+  register: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    roles: ("WORKER" | "EMPLOYER")[];
+  }) => {
+    return request<any>(USER_API_URL, "/api/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
 };
