@@ -88,4 +88,15 @@ export const userApi = {
 
     return data;
   },
+  register: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    roles: ("WORKER" | "EMPLOYER")[];
+  }) => {
+    return request<any>(USER_API_URL, "/api/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
 };
