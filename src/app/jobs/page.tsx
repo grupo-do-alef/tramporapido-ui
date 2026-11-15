@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { taskApi, type Task } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 const modalityLabel: Record<Task["modality"], string> = {
   IN_PERSON: "Presencial",
@@ -11,6 +12,7 @@ const modalityLabel: Record<Task["modality"], string> = {
 };
 
 export default function JobsPage() {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("Todas");
   const [search, setSearch] = useState("");
   const [jobs, setJobs] = useState<Task[]>([]);
@@ -18,6 +20,13 @@ export default function JobsPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const hasToken = document.cookie.includes("token=");
+
+    if (!hasToken) {
+      router.replace("/login");
+      return;
+    }
+
     taskApi
       .list()
       .then(setJobs)
