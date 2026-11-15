@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 
 type Education = {
@@ -76,6 +77,8 @@ const defaultResume: ResumeFormValues = {
 const STORAGE_KEY = "tramporapido-curriculo";
 
 export default function ResumePage() {
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [step, setStep] = useState<"education" | "experience" | "saved">(
     "education",
   );
@@ -86,7 +89,6 @@ export default function ResumePage() {
     register,
     control,
     handleSubmit,
-    reset,
     watch,
     setValue,
     trigger,
@@ -109,17 +111,23 @@ export default function ResumePage() {
   const skills = watch("skills") || [];
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        reset(JSON.parse(saved));
-      }
-    } catch {
-      // fallback
-    } finally {
-      setIsLoaded(true);
+    const hasToken = document.cookie.includes("token=");
+
+    if (!hasToken) {
+      router.replace("/login");
+      return;
     }
-  }, [reset]);
+
+    setIsAuthorized(true);
+  }, [router]);
+
+  if (!isAuthorized || !isLoaded) {
+    return (
+      <div className="flex w-full items-center justify-center p-12">
+        <p className="text-sm text-neutral-500">Verificando sessão...</p>
+      </div>
+    );
+  }
 
   function persistData(data: ResumeFormValues) {
     try {
@@ -165,8 +173,6 @@ export default function ResumePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (!isLoaded) return null;
-
   return (
     <div>
       <div>
@@ -177,7 +183,7 @@ export default function ResumePage() {
       </div>
 
       {step === "education" && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 mt-4">
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-white p-5">
             <h2 className="m-0 text-lg font-semibold text-ink">Escolaridade</h2>
 
@@ -272,7 +278,6 @@ export default function ResumePage() {
             </button>
           </section>
 
-          {/* Habilidades */}
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-white p-5">
             <h2 className="m-0 text-lg font-semibold text-ink">Habilidades</h2>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -329,7 +334,7 @@ export default function ResumePage() {
       {step === "experience" && (
         <form
           onSubmit={handleSubmit(onSubmitFinal)}
-          className="flex flex-col gap-5"
+          className="flex flex-col gap-5 mt-4"
         >
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-white p-5">
             <h2 className="m-0 text-lg font-semibold text-ink">
@@ -468,7 +473,7 @@ export default function ResumePage() {
       )}
 
       {step === "saved" && (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 mt-4">
           <section className="rounded-lg border border-emerald-600 bg-emerald-50 p-5 text-emerald-900">
             <h2 className="m-0 text-lg font-semibold">
               ✓ Currículo salvo com sucesso
