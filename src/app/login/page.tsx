@@ -17,9 +17,9 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      const { token } = await userApi.csrf();
-      await userApi.login(email, password, token);
-      router.push("/jobs");
+      await userApi.login(email, password);
+
+      router.replace("/");
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Não foi possível entrar.",
@@ -28,7 +28,6 @@ export default function LoginPage() {
       setLoading(false);
     }
   }
-
   return (
     <div
       role="dialog"
