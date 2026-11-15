@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { taskApi, type Task } from "@/lib/api";
+import { taskApi, getUserRoles, type Task } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 const modalityLabel: Record<Task["modality"], string> = {
@@ -18,6 +18,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isEmployer, setIsEmployer] = useState(false); // Estado para controlar exibição do botão
 
   useEffect(() => {
     const hasToken = document.cookie.includes("token=");
@@ -26,6 +27,9 @@ export default function JobsPage() {
       router.replace("/login");
       return;
     }
+
+    const roles = getUserRoles();
+    setIsEmployer(roles.some((r) => r.toUpperCase().includes("EMPLOYER")));
 
     taskApi
       .list()
@@ -38,7 +42,7 @@ export default function JobsPage() {
         ),
       )
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   const filtros = ["Todas", "Presencial", "Remoto", "Integral", "Manhã"];
 
@@ -63,12 +67,15 @@ export default function JobsPage() {
             Consulte e acompanhe as vagas registadas no sistema.
           </p>
         </div>
-        <Link
-          href="/jobs/register"
-          className="inline-flex min-h-[42px] shrink-0 items-center justify-center rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white no-underline transition-all hover:brightness-92 w-full sm:w-auto"
-        >
-          + Nova vaga
-        </Link>
+
+        {isEmployer && (
+          <Link
+            href="/jobs/register"
+            className="inline-flex min-h-[42px] shrink-0 items-center justify-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white no-underline transition-all hover:bg-gray-800 w-full sm:w-auto shadow-sm"
+          >
+            + Nova vaga
+          </Link>
+        )}
       </div>
 
       <div className="w-full">

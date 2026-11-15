@@ -22,6 +22,42 @@ function getTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[2]) : null;
 }
 
+export function getUserRoles(): string[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const match = document.cookie.match(/(^|;\s*)roles=([^;]*)/);
+    if (match) {
+      const parsedRoles = JSON.parse(decodeURIComponent(match[2]));
+      if (Array.isArray(parsedRoles)) {
+        return parsedRoles.map(String);
+      }
+    }
+
+    const token = getTokenFromCookie();
+    if (!token) return [];
+
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join(""),
+    );
+
+    const payload = JSON.parse(jsonPayload);
+    const rawRoles = payload.roles || payload.authorities || [];
+
+    if (typeof rawRoles === "string") return [rawRoles];
+    if (Array.isArray(rawRoles)) return rawRoles.map(String);
+
+    return [];
+  } catch (e) {
+    return [];
+  }
+}
+
 async function request<T>(
   baseUrl: string,
   path: string,
@@ -72,11 +108,10 @@ export const taskApi = {
 export const userApi = {
   login: async (email: string, password: string) => {
     const data = await request<{
-      id: string;
-      email: string;
-      role: "CANDIDATE" | "CONTRACTOR" | "INTERMEDIARY" | "ADMINISTRATOR";
-      message: string;
       accessToken: string;
+      email: string;
+      name: string;
+      roles: string[];
     }>(USER_API_URL, "/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
@@ -84,10 +119,15 @@ export const userApi = {
 
     if (data?.accessToken && typeof window !== "undefined") {
       document.cookie = `token=${data.accessToken}; path=/; max-age=604800; SameSite=Lax`;
+
+      if (data.roles) {
+        document.cookie = `roles=${JSON.stringify(data.roles)}; path=/; max-age=604800; SameSite=Lax`;
+      }
     }
 
     return data;
   },
+
   register: async (data: {
     name: string;
     email: string;
