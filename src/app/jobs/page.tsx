@@ -18,7 +18,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isEmployer, setIsEmployer] = useState(false); // Estado para controlar exibição do botão
+  const [isEmployer, setIsEmployer] = useState(false);
 
   useEffect(() => {
     const hasToken = document.cookie.includes("token=");
