@@ -9,12 +9,13 @@ pipeline {
         AWS_DEFAULT_REGION = 'us-east-1'
         AWS_PAGER = ''
         AWS_PROFILE = 'lab'
+        SOURCE_DIR = "${WORKSPACE}/source"
     }
 
     stages {
         stage('Obter código da main') {
             steps {
-                sh 'rm -rf "$WORKSPACE/source" && git clone --depth 1 --branch main https://github.com/grupo-do-alef/tramporapido-ui.git "$WORKSPACE/source"'
+                sh '/workspace/jenkins/scripts/checkout-main.sh https://github.com/grupo-do-alef/tramporapido-ui.git "$SOURCE_DIR"'
             }
         }
 
@@ -40,12 +41,10 @@ pipeline {
                 sh '''
                     USER_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh user-service public)
                     TASK_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh task-service public)
-                        API_ENDPOINT=$(aws apigatewayv2 get-apis --query "Items[?Name=='tramporapido-api'].ApiEndpoint | [0]" --output text)
                     test "$USER_PUBLIC_IP" != 'None'
                     test "$TASK_PUBLIC_IP" != 'None'
-                        test "$API_ENDPOINT" != 'None'
                     /workspace/jenkins/scripts/ensure-ec2.sh tramporapido-ui > .ec2.env
-                        printf 'USER_PUBLIC_IP=%s\nTASK_PUBLIC_IP=%s\nAPI_ENDPOINT=%s\n' "$USER_PUBLIC_IP" "$TASK_PUBLIC_IP" "$API_ENDPOINT" >> .ec2.env
+                    printf 'USER_PUBLIC_IP=%s\nTASK_PUBLIC_IP=%s\n' "$USER_PUBLIC_IP" "$TASK_PUBLIC_IP" >> .ec2.env
                 '''
             }
         }
