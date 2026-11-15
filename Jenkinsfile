@@ -8,17 +8,14 @@ pipeline {
     environment {
         AWS_DEFAULT_REGION = 'us-east-1'
         AWS_PAGER = ''
+        AWS_PROFILE = 'lab'
         SOURCE_DIR = '/workspace/tramporapido-ui'
     }
 
     stages {
         stage('Validar acesso AWS') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                    string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
-                ]) { sh 'aws sts get-caller-identity' }
+                sh 'aws sts get-caller-identity'
             }
         }
 
@@ -34,20 +31,14 @@ pipeline {
         stage('Garantir EC2') {
             when { expression { params.DEPLOY_TO_AWS } }
             steps {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY'),
-                    string(credentialsId: 'aws-session-token', variable: 'AWS_SESSION_TOKEN')
-                ]) {
-                    sh '''
-                        USER_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh user-service public)
-                        TASK_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh task-service public)
-                        test "$USER_PUBLIC_IP" != 'None'
-                        test "$TASK_PUBLIC_IP" != 'None'
-                        /workspace/jenkins/scripts/ensure-ec2.sh tramporapido-ui > .ec2.env
-                        printf 'USER_PUBLIC_IP=%s\nTASK_PUBLIC_IP=%s\n' "$USER_PUBLIC_IP" "$TASK_PUBLIC_IP" >> .ec2.env
-                    '''
-                }
+                sh '''
+                    USER_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh user-service public)
+                    TASK_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh task-service public)
+                    test "$USER_PUBLIC_IP" != 'None'
+                    test "$TASK_PUBLIC_IP" != 'None'
+                    /workspace/jenkins/scripts/ensure-ec2.sh tramporapido-ui > .ec2.env
+                    printf 'USER_PUBLIC_IP=%s\nTASK_PUBLIC_IP=%s\n' "$USER_PUBLIC_IP" "$TASK_PUBLIC_IP" >> .ec2.env
+                '''
             }
         }
 
