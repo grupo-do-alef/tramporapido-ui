@@ -1,4 +1,4 @@
-const TASK_API_URL = process.env.NEXT_PUBLIC_TASK_API_URL ?? "";
+const TASK_API_URL = process.env.NEXT_PUBLIC_TASK_API_URL || "/task-api";
 const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL ?? "";
 
 export type Task = {

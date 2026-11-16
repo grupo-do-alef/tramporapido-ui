@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
       },
 
       {
+        source: "/task-api/:path*",
+        destination: "http://localhost:8081/:path*",
+      },
+      {
         source: "/tasks/:path*",
         destination: "http://localhost:8081/tasks/:path*",
       },
