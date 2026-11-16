@@ -73,6 +73,7 @@ function ResumeForm() {
   const [skillInput, setSkillInput] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [skillsError, setSkillsError] = useState("");
 
   const {
     register,
@@ -82,7 +83,7 @@ function ResumeForm() {
     setValue,
     reset,
     trigger,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ResumeFormValues>({
     defaultValues: defaultResume,
     mode: "onSubmit",
@@ -140,6 +141,7 @@ function ResumeForm() {
     ) {
       const updated = [...skills, trimmed];
       setValue("skills", updated);
+      setSkillsError("");
     }
     setSkillInput("");
   }
@@ -150,8 +152,10 @@ function ResumeForm() {
   }
 
   async function handleNextStep() {
-    const isValid = await trigger("education");
-    if (isValid) {
+    const hasSkill = skills.some((skill) => skill.trim()) || Boolean(skillInput.trim());
+    setSkillsError(hasSkill ? "" : "Informe pelo menos uma habilidade.");
+    if (await trigger("education") && hasSkill) {
+      handleAddSkill();
       setStep("experience");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -234,24 +238,33 @@ function ResumeForm() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="flex flex-col gap-1">
                       <label className="text-xs font-semibold uppercase text-neutral-600">
-                        Início
+                        Início *
                       </label>
                       <input
                         placeholder="MM/AAAA"
-                        {...register(`education.${index}.start`)}
+                        {...register(`education.${index}.start`, {
+                          validate: (value) => Boolean(value?.trim()) || "Informe o início do curso.",
+                        })}
+                        aria-invalid={Boolean(fieldErrors?.start)}
                         className="h-10 rounded-lg border border-default px-3 text-sm text-muted bg-white"
                       />
+                      {fieldErrors?.start && <p role="alert" className="text-xs text-rose-700">{fieldErrors.start.message}</p>}
                     </div>
                     {!isOngoing && (
                       <div className="flex flex-col gap-1">
                         <label className="text-xs font-semibold uppercase text-neutral-600">
-                          Conclusão
+                          Conclusão *
                         </label>
                         <input
                           placeholder="MM/AAAA"
-                          {...register(`education.${index}.end`)}
+                          {...register(`education.${index}.end`, {
+                            validate: (value, form) =>
+                              form.education[index].ongoing || Boolean(value?.trim()) || "Informe a conclusão do curso.",
+                          })}
+                          aria-invalid={Boolean(fieldErrors?.end)}
                           className="h-10 rounded-lg border border-default px-3 text-sm text-muted bg-white"
                         />
+                        {fieldErrors?.end && <p role="alert" className="text-xs text-rose-700">{fieldErrors.end.message}</p>}
                       </div>
                     )}
                   </div>
@@ -279,6 +292,7 @@ function ResumeForm() {
 
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-white p-5">
             <h2 className="m-0 text-lg font-semibold text-ink">Habilidades</h2>
+            {skillsError && <p role="alert" className="text-xs text-rose-700">{skillsError}</p>}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
               <div className="flex flex-1 flex-col gap-1">
                 <label className="text-xs font-semibold uppercase text-neutral-600">
@@ -474,9 +488,10 @@ function ResumeForm() {
             </button>
             <button
               type="submit"
-              className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-ink bg-ink px-6 text-sm font-semibold text-white transition-all hover:brightness-95"
+              disabled={isSubmitting}
+              className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-ink bg-ink px-6 text-sm font-semibold text-white transition-all hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
             >
-              Salvar currículo
+              {isSubmitting ? "Salvando currículo…" : "Salvar currículo"}
             </button>
           </div>
         </form>
