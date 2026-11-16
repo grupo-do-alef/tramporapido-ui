@@ -93,7 +93,11 @@ function ResumeForm() {
     name: "education",
   });
 
-  const { fields: experienceFields, append: appendExperience } = useFieldArray({
+  const {
+    fields: experienceFields,
+    append: appendExperience,
+    remove: removeExperience,
+  } = useFieldArray({
     control,
     name: "experiences",
   });
@@ -437,6 +441,16 @@ function ResumeForm() {
                       className="rounded-lg border border-default p-3 text-sm text-muted bg-white"
                     />
                   </div>
+                  {experienceFields.length > 1 && (
+                    <button
+                      type="button"
+                      aria-label={`Excluir experiência ${index + 1}`}
+                      onClick={() => removeExperience(index)}
+                      className="w-fit cursor-pointer rounded-lg border border-rose-600 px-4 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 sm:col-span-2 sm:justify-self-end"
+                    >
+                      Excluir experiência
+                    </button>
+                  )}
                 </div>
               );
             })}
