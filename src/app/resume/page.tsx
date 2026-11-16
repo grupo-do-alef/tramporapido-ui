@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
+import { userApi } from "@/lib/api";
 
 type Education = {
   course: string;
@@ -50,31 +51,10 @@ const emptyExperience: Experience = {
 };
 
 const defaultResume: ResumeFormValues = {
-  education: [
-    {
-      course: "Ensino médio",
-      level: "Médio",
-      institution: "Escola Municipal Central",
-      start: "02/2018",
-      end: "12/2020",
-      ongoing: false,
-    },
-  ],
-  skills: ["Organização", "Atendimento", "Informática"],
-  experiences: [
-    {
-      role: "Assistente de atendimento",
-      company: "Empresa Exemplo",
-      current: false,
-      start: "03/2023",
-      end: "09/2026",
-      modality: "Presencial",
-      description: "Atendimento ao público e organização de documentos.",
-    },
-  ],
+  education: [emptyEducation],
+  skills: [],
+  experiences: [emptyExperience],
 };
-
-const STORAGE_KEY = "tramporapido-curriculo";
 
 export default function ResumePage() {
   const router = useRouter();
@@ -84,6 +64,7 @@ export default function ResumePage() {
   );
   const [skillInput, setSkillInput] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const {
     register,
@@ -91,6 +72,7 @@ export default function ResumePage() {
     handleSubmit,
     watch,
     setValue,
+    reset,
     trigger,
     formState: { errors },
   } = useForm<ResumeFormValues>({
@@ -119,6 +101,12 @@ export default function ResumePage() {
     }
 
     setIsAuthorized(true);
+    userApi.getProfile().then((profile) => {
+      if (profile.education?.length || profile.skills?.length || profile.experiences?.length) {
+        reset(profile as ResumeFormValues);
+        if (profile.education?.length) setStep("education");
+      }
+    }).catch(() => undefined).finally(() => setIsLoaded(true));
   }, [router]);
 
   if (!isAuthorized || !isLoaded) {
@@ -127,13 +115,6 @@ export default function ResumePage() {
         <p className="text-sm text-neutral-500">Verificando sessão...</p>
       </div>
     );
-  }
-
-  function persistData(data: ResumeFormValues) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      window.dispatchEvent(new Event("curriculo-atualizado"));
-    } catch {}
   }
 
   function handleAddSkill() {
@@ -147,7 +128,6 @@ export default function ResumePage() {
     ) {
       const updated = [...skills, trimmed];
       setValue("skills", updated);
-      persistData({ ...watch(), skills: updated });
     }
     setSkillInput("");
   }
@@ -155,22 +135,29 @@ export default function ResumePage() {
   function handleRemoveSkill(indexToRemove: number) {
     const updated = skills.filter((_, idx) => idx !== indexToRemove);
     setValue("skills", updated);
-    persistData({ ...watch(), skills: updated });
   }
 
   async function handleNextStep() {
     const isValid = await trigger("education");
     if (isValid) {
-      persistData(watch());
       setStep("experience");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
 
-  const onSubmitFinal = (data: ResumeFormValues) => {
-    persistData(data);
-    setStep("saved");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const onSubmitFinal = async (data: ResumeFormValues) => {
+    try {
+      setSaveError("");
+      await userApi.saveProfile(data);
+      window.dispatchEvent(new Event("curriculo-atualizado"));
+      const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+      if (returnTo) { router.push(returnTo); return; }
+      setStep("saved");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : "Não foi possível salvar o perfil.");
+      setStep("experience");
+    }
   };
 
   return (
@@ -336,6 +323,7 @@ export default function ResumePage() {
           onSubmit={handleSubmit(onSubmitFinal)}
           className="flex flex-col gap-5 mt-4"
         >
+          {saveError && <p role="alert" className="text-sm text-rose-700">{saveError}</p>}
           <section className="flex flex-col gap-4 rounded-lg border border-default bg-white p-5">
             <h2 className="m-0 text-lg font-semibold text-ink">
               Experiências profissionais
