@@ -1,5 +1,4 @@
-const TASK_API_URL =
-  process.env.NEXT_PUBLIC_TASK_API_URL ?? "http://localhost:8081";
+const TASK_API_URL = process.env.NEXT_PUBLIC_TASK_API_URL ?? "";
 const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL ?? "";
 
 export type Task = {
