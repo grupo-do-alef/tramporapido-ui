@@ -1,5 +1,7 @@
 const TASK_API_URL = process.env.NEXT_PUBLIC_TASK_API_URL || "/task-api";
-const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL ?? "";
+const USER_API_URL =
+  process.env.NEXT_PUBLIC_USER_API_URL?.trim().replace(/\/+$/, "") ||
+  "http://localhost:8080";
 
 export type Task = {
   id: string;
@@ -104,11 +106,12 @@ async function request<T>(
   init?: RequestInit,
 ): Promise<T> {
   const token = getTokenFromCookie();
-  const isAuthRoute = path.includes("/auth/");
+  const isPublicUserRequest =
+    path === "/api/auth/login" || path === "/api/register";
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(!isAuthRoute && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(!isPublicUserRequest && token ? { Authorization: `Bearer ${token}` } : {}),
     ...(init?.headers as Record<string, string>),
   };
 
@@ -118,7 +121,7 @@ async function request<T>(
     credentials: "include",
   });
 
-  if ((response.status === 401 || response.status === 403) && !isAuthRoute) {
+  if ((response.status === 401 || response.status === 403) && !isPublicUserRequest) {
     if (typeof window !== "undefined") {
       document.cookie = "token=; path=/; max-age=0";
       window.location.href = "/login";
@@ -127,11 +130,7 @@ async function request<T>(
   }
 
   if (!response.ok) {
-    const contentType = response.headers.get("content-type") ?? "";
-    const body = contentType.includes("text/html") ? "" : await response.text();
-    throw new Error(
-      body || `Erro ${response.status} ao comunicar com o serviço.`,
-    );
+    throw new Error(await extractErrorMessage(response));
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
@@ -169,7 +168,6 @@ export const userApi = {
     });
 
     if (data?.accessToken && typeof window !== "undefined") {
-      // Limpa tokens antigos antes de gravar o novo para evitar conflitos de escopo/domínio
       document.cookie = "token=; path=/; max-age=0";
       document.cookie = `token=${data.accessToken}; path=/; max-age=604800; SameSite=Lax`;
 
