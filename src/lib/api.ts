@@ -206,7 +206,7 @@ export const userApi = {
       body: JSON.stringify(data),
     });
   },
-  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/api/users/me/profile"),
+  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/users/me/profile"),
   saveProfile: (profile: { education: unknown[]; skills: string[]; experiences: unknown[] }) =>
-    request(USER_API_URL, "/api/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
+    request(USER_API_URL, "/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
 };
