@@ -175,8 +175,7 @@ export default function RegistrationForm() {
         ),
       });
 
-      sessionStorage.setItem("created-task-id", created.id);
-      router.push("/jobs/publicada");
+      router.push(`/jobs/${created.id}`);
     } catch (cause) {
       setApiError(
         cause instanceof Error
@@ -252,7 +251,7 @@ export default function RegistrationForm() {
                       aria-describedby={
                         fieldError ? `${field.name}-error` : undefined
                       }
-                      className="block box-border h-[42px] w-full max-w-[400px] sm:max-w-full rounded-lg border border-[#808080] bg-white px-3 py-2 text-muted font-inherit text-inherit cursor-pointer placeholder:text-muted/60 focus-visible:outline-3 focus-visible:outline-ink focus-visible:outline-offset-3 aria-invalid:border-[#b42318]"
+                      className="block box-border h-[42px] w-full rounded-lg border border-[#808080] bg-white px-3 py-2 text-muted font-inherit text-inherit cursor-pointer placeholder:text-muted/60 focus-visible:outline-3 focus-visible:outline-ink focus-visible:outline-offset-3 aria-invalid:border-[#b42318]"
                     >
                       <option value="" disabled>
                         {field.placeholder}
@@ -289,7 +288,7 @@ export default function RegistrationForm() {
                       aria-describedby={
                         fieldError ? `${field.name}-error` : undefined
                       }
-                      className="block box-border h-[42px] w-full max-w-[400px] sm:max-w-full rounded-lg border border-[#808080] bg-white px-3 py-2 text-muted font-inherit text-inherit placeholder:text-muted/60 focus-visible:outline-3 focus-visible:outline-ink focus-visible:outline-offset-3 aria-invalid:border-[#b42318]"
+                      className="block box-border h-[42px] w-full rounded-lg border border-[#808080] bg-white px-3 py-2 text-muted font-inherit text-inherit placeholder:text-muted/60 focus-visible:outline-3 focus-visible:outline-ink focus-visible:outline-offset-3 aria-invalid:border-[#b42318]"
                     />
                   )}
 
@@ -307,18 +306,18 @@ export default function RegistrationForm() {
           </div>
         </section>
 
-        <div className="my-[18px] flex gap-4 sm:flex-col sm:w-full sm:gap-3">
+        <div className="my-[18px] flex flex-col-reverse sm:flex-row gap-4 w-full justify-end items-center">
           <button
             type="button"
             onClick={handleCancel}
-            className="inline-flex min-h-[44px] sm:min-h-[48px] sm:w-full w-[200px] cursor-pointer items-center justify-center rounded-lg border border-ink bg-white p-2.5 font-medium text-ink no-underline transition-all hover:brightness-94 disabled:cursor-not-allowed focus-visible:outline-3 focus-visible:outline-ink focus-visible:outline-offset-3"
+            className="inline-flex min-h-[44px] sm:min-h-[48px] w-full sm:w-[200px] flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#925807] bg-white p-2.5 font-medium text-[#925807] no-underline transition-all hover:bg-[#ffeed2]/60 disabled:cursor-not-allowed"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex min-h-[44px] sm:min-h-[48px] sm:w-full w-[200px] cursor-pointer items-center justify-center rounded-lg border border-ink bg-ink p-2.5 font-medium text-white no-underline transition-all hover:brightness-94 disabled:cursor-not-allowed focus-visible:outline-3 focus-visible:outline-ink focus-visible:outline-offset-3"
+            className="inline-flex min-h-[44px] sm:min-h-[48px] w-full sm:w-[200px] flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#925807] bg-[#925807] p-2.5 font-medium text-white no-underline transition-all hover:brightness-95 disabled:cursor-not-allowed"
           >
             {saving ? "Enviando…" : "Publicar vaga"}
           </button>

@@ -3,6 +3,7 @@
 import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { taskApi } from "@/lib/api";
 
 interface Duvida {
   id: string;
@@ -16,6 +17,17 @@ interface Candidatura {
   status: string;
 }
 
+interface TaskData {
+  id: string;
+  title: string;
+  description: string;
+  city: string;
+  neighborhood: string;
+  status: string;
+  modality: string;
+  income?: number;
+}
+
 export default function VagaDetalhePage({
   params,
 }: {
@@ -25,25 +37,17 @@ export default function VagaDetalhePage({
   const { id } = use(params);
 
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [task, setTask] = useState<TaskData | null>(null);
+  const [error, setError] = useState("");
+
   const [activeView, setActiveView] = useState<
     "resumo" | "candidaturas" | "duvidas"
   >("resumo");
   const [novaPergunta, setNovaPergunta] = useState("");
-  const [duvidas, setDuvidas] = useState<Duvida[]>([
-    {
-      id: "1",
-      pergunta: "Qual a carga horária semanal presencial no modelo híbrido?",
-      resposta: "Serão 3 dias no escritório (Centro) e 2 dias em home office.",
-    },
-  ]);
+  const [duvidas, setDuvidas] = useState<Duvida[]>([]);
 
-  const [candidaturas, setCandidaturas] = useState<Candidatura[]>([
-    {
-      id: "946160bf-f5a3-47ea-b2d8-8ff78b662ff1",
-      candidateId: "11111111-1111-1111-1111-111111111111",
-      status: "PENDING",
-    },
-  ]);
+  const [candidaturas, setCandidaturas] = useState<Candidatura[]>([]);
 
   useEffect(() => {
     const hasToken = document.cookie.includes("token=");
@@ -54,12 +58,52 @@ export default function VagaDetalhePage({
     }
 
     setIsAuthorized(true);
-  }, [router]);
 
-  if (!isAuthorized) {
+    async function fetchTaskDetails() {
+      try {
+        setLoading(true);
+        const data = await taskApi.getById(id);
+        setTask(data);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Não foi possível carregar os detalhes da vaga.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (id) {
+      fetchTaskDetails();
+    }
+  }, [id, router]);
+
+  if (!isAuthorized || loading) {
     return (
       <div className="flex w-full items-center justify-center p-8">
-        <p className="text-sm text-neutral-500">Verificando sessão...</p>
+        <p className="text-sm text-muted">
+          {!isAuthorized
+            ? "Verificando sessão..."
+            : "Carregando detalhes da vaga..."}
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !task) {
+    return (
+      <div className="mx-auto max-w-6xl p-6">
+        <p className="text-sm text-[#b42318] mb-4">
+          {error || "Vaga não encontrada."}
+        </p>
+        <Link
+          href="/jobs"
+          className="text-sm font-medium text-[#925807] underline"
+        >
+          Voltar para lista de vagas
+        </Link>
       </div>
     );
   }
@@ -82,60 +126,70 @@ export default function VagaDetalhePage({
     );
   }
 
+  const modalityMap: Record<string, string> = {
+    IN_PERSON: "Presencial",
+    HYBRID: "Híbrido",
+    HOME_OFFICE: "Remoto",
+  };
+
   return (
-    <div className="mx-auto max-w-6xl p-6">
-      <h1 className="text-2xl font-bold text-neutral-900">
+    <div className="mx-auto max-w-6xl p-6 text-ink text-sm leading-5">
+      <h1 className="text-2xl font-semibold text-ink m-0 leading-[35px]">
         Gerenciamento da vaga
       </h1>
-      <p className="text-sm text-neutral-500 mb-6">
-        Nº {id.substring(0, 8)} • Informações detalhadas da oportunidade
+      <p className="text-xs text-muted mb-6 mt-1">
+        Informações detalhadas da oportunidade
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Coluna Principal de Conteúdo */}
-        <section className="md:col-span-3 bg-white border border-neutral-200 rounded-xl p-6 shadow-sm">
+        <section className="md:col-span-3 bg-white border border-[#808080] rounded-lg p-6 shadow-sm">
           {activeView === "resumo" && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-neutral-800">
-                Auxiliar administrativo
-              </h2>
-              <p className="text-sm text-neutral-500">
-                Nº 1024 • CLT • Período integral • Presencial
+              <h2 className="text-xl font-semibold text-ink">{task.title}</h2>
+              <p className="text-xs text-muted">
+                Status: {task.status} •{" "}
+                {modalityMap[task.modality] || task.modality}
               </p>
-              <p className="font-medium text-neutral-700">
-                Salário: R$ 1.900,00 / mês
+              <p className="font-medium text-ink">
+                Salário: R${" "}
+                {task.income?.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 2,
+                })}{" "}
+                / mês
               </p>
-              <p className="text-neutral-600">Centro • São Paulo / SP</p>
-              <h3 className="text-lg font-semibold text-neutral-800 pt-2">
+              <p className="text-muted">
+                {task.neighborhood ? `${task.neighborhood} • ` : ""}
+                {task.city}
+              </p>
+              <h3 className="text-lg font-semibold text-ink pt-2">
                 Descrição e requisitos
               </h3>
-              <p className="text-neutral-600 leading-relaxed">
-                Organize documentos, atenda clientes e apoie rotinas
-                administrativas. Ensino médio completo e organização.
+              <p className="text-ink leading-relaxed whitespace-pre-line">
+                {task.description}
               </p>
             </div>
           )}
 
           {activeView === "candidaturas" && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-neutral-800">
+              <h2 className="text-xl font-semibold text-ink">
                 Candidaturas recebidas
               </h2>
-              <p className="text-sm text-neutral-500">
+              <p className="text-xs text-muted">
                 Total: {candidaturas.length} inscrito(s)
               </p>
               <div className="grid gap-3 w-full">
                 {candidaturas.map((c) => (
                   <div
                     key={c.id}
-                    className="border border-neutral-200 p-4 rounded-lg bg-neutral-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                    className="border border-[#808080] p-4 rounded-lg bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                   >
                     <div>
-                      <p className="text-sm text-neutral-700">
+                      <p className="text-sm text-ink">
                         <strong>Candidato:</strong>{" "}
                         {c.candidateId.substring(0, 8)}...
                       </p>
-                      <p className="text-sm text-neutral-700 mt-1">
+                      <p className="text-sm text-ink mt-1">
                         <strong>Status:</strong>{" "}
                         <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-800">
                           {c.status}
@@ -145,14 +199,14 @@ export default function VagaDetalhePage({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors cursor-pointer"
+                        className="px-4 py-2 text-sm font-medium text-white bg-[#925807] hover:brightness-95 rounded-lg transition-colors cursor-pointer"
                         onClick={() => handleAlterarStatus(c.id, "APPROVED")}
                       >
                         Aprovar
                       </button>
                       <button
                         type="button"
-                        className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+                        className="px-4 py-2 text-sm font-medium text-ink bg-white border border-[#808080] hover:bg-neutral-50 rounded-lg transition-colors cursor-pointer"
                         onClick={() => handleAlterarStatus(c.id, "REJECTED")}
                       >
                         Rejeitar
@@ -166,7 +220,7 @@ export default function VagaDetalhePage({
 
           {activeView === "duvidas" && (
             <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-neutral-800">
+              <h2 className="text-xl font-semibold text-ink">
                 Dúvidas e comentários
               </h2>
               <form
@@ -175,7 +229,7 @@ export default function VagaDetalhePage({
               >
                 <label
                   htmlFor="duvida"
-                  className="text-sm font-medium text-neutral-700"
+                  className="text-sm font-medium text-ink"
                 >
                   Enviar pergunta ao contratante:
                 </label>
@@ -185,34 +239,34 @@ export default function VagaDetalhePage({
                   placeholder="Escreva sua dúvida aqui..."
                   value={novaPergunta}
                   onChange={(e) => setNovaPergunta(e.target.value)}
-                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full h-[42px] px-3 py-2 border border-[#808080] rounded-lg focus-visible:outline-3 focus-visible:outline-ink focus-visible:outline-offset-3 text-sm"
                 />
                 <button
                   type="submit"
-                  className="w-40 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors cursor-pointer"
+                  className="w-40 h-[42px] px-4 py-2 text-sm font-medium text-white bg-[#925807] hover:brightness-95 rounded-lg transition-colors cursor-pointer"
                 >
                   Enviar dúvida
                 </button>
               </form>
 
-              <h3 className="text-lg font-semibold text-neutral-800 pt-4">
+              <h3 className="text-lg font-semibold text-ink pt-4">
                 Perguntas registradas
               </h3>
               <div className="grid gap-3 w-full">
                 {duvidas.map((d) => (
                   <div
                     key={d.id}
-                    className="border border-neutral-200 p-4 rounded-lg bg-neutral-50/50"
+                    className="border border-[#808080] p-4 rounded-lg bg-white"
                   >
-                    <p className="text-sm text-neutral-800">
+                    <p className="text-sm text-ink">
                       <strong>P:</strong> {d.pergunta}
                     </p>
                     {d.resposta ? (
-                      <p className="text-sm text-neutral-600 mt-2">
+                      <p className="text-sm text-muted mt-2">
                         <strong>R:</strong> {d.resposta}
                       </p>
                     ) : (
-                      <p className="text-sm text-neutral-400 italic mt-2">
+                      <p className="text-sm text-muted italic mt-2">
                         Aguardando resposta do contratante.
                       </p>
                     )}
@@ -223,14 +277,13 @@ export default function VagaDetalhePage({
           )}
         </section>
 
-        {/* Coluna Lateral: Navegação */}
         <nav className="flex flex-col gap-2" aria-label="Ações da oportunidade">
           <button
             type="button"
-            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer border ${
               activeView === "resumo"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+                ? "border-[#925807] bg-[#925807] text-white"
+                : "border-[#808080] bg-white text-ink hover:bg-neutral-50"
             }`}
             onClick={() => setActiveView("resumo")}
           >
@@ -238,10 +291,10 @@ export default function VagaDetalhePage({
           </button>
           <button
             type="button"
-            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer border ${
               activeView === "candidaturas"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+                ? "border-[#925807] bg-[#925807] text-white"
+                : "border-[#808080] bg-white text-ink hover:bg-neutral-50"
             }`}
             onClick={() => setActiveView("candidaturas")}
           >
@@ -249,10 +302,10 @@ export default function VagaDetalhePage({
           </button>
           <button
             type="button"
-            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+            className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer border ${
               activeView === "duvidas"
-                ? "bg-blue-600 text-white"
-                : "bg-white text-neutral-700 border border-neutral-200 hover:bg-neutral-50"
+                ? "border-[#925807] bg-[#925807] text-white"
+                : "border-[#808080] bg-white text-ink hover:bg-neutral-50"
             }`}
             onClick={() => setActiveView("duvidas")}
           >
@@ -260,7 +313,7 @@ export default function VagaDetalhePage({
           </button>
           <Link
             href="/jobs"
-            className="text-center text-sm font-medium text-neutral-600 hover:text-neutral-900 py-3 px-4 border border-transparent rounded-lg hover:bg-neutral-100 transition-colors"
+            className="text-center text-sm font-medium text-ink py-3 px-4 border border-[#808080] rounded-lg hover:bg-neutral-50 transition-colors no-underline mt-2"
           >
             Voltar para lista
           </Link>

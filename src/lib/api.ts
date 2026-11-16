@@ -102,6 +102,7 @@ export const taskApi = {
       method: "POST",
       body: JSON.stringify(task),
     }),
+  getById: (id: string) => request<Task>(TASK_API_URL, `/tasks/${id}`),
 };
 
 export const userApi = {
