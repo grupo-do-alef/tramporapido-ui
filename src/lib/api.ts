@@ -139,6 +139,10 @@ export const taskApi = {
       body: JSON.stringify(task),
     }),
   getById: (id: string) => request<Task>(TASK_API_URL, `/tasks/${id}`),
+  apply: (taskId: string) => request<{ id: string; status: string }>(TASK_API_URL, "/applications", {
+    method: "POST", body: JSON.stringify({ taskId }),
+  }),
+  myApplications: () => request<{ id: string; taskId: string; status: string; dateApplication: string }[]>(TASK_API_URL, "/applications/mine"),
 };
 
 export const userApi = {
@@ -183,4 +187,7 @@ export const userApi = {
       body: JSON.stringify(data),
     });
   },
+  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/users/me/profile"),
+  saveProfile: (profile: { education: unknown[]; skills: string[]; experiences: unknown[] }) =>
+    request(USER_API_URL, "/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
 };

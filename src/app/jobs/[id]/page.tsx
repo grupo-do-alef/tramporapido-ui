@@ -3,7 +3,7 @@
 import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { taskApi } from "@/lib/api";
+import { taskApi, userApi } from "@/lib/api";
 
 interface Duvida {
   id: string;
@@ -40,6 +40,9 @@ export default function VagaDetalhePage({
   const [loading, setLoading] = useState(true);
   const [task, setTask] = useState<TaskData | null>(null);
   const [error, setError] = useState("");
+  const [applicationMessage, setApplicationMessage] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [isApplied, setIsApplied] = useState(false);
 
   const [activeView, setActiveView] = useState<
     "resumo" | "candidaturas" | "duvidas"
@@ -58,6 +61,8 @@ export default function VagaDetalhePage({
     }
 
     setIsAuthorized(true);
+
+    taskApi.myApplications().then((items) => setIsApplied(items.some((item) => item.taskId === id))).catch(() => undefined);
 
     async function fetchTaskDetails() {
       try {
@@ -118,6 +123,24 @@ export default function VagaDetalhePage({
     setNovaPergunta("");
   }
 
+  async function applyToTask() {
+    setApplying(true);
+    setApplicationMessage("");
+    try {
+      const profile = await userApi.getProfile();
+      if (!profile.education?.length || !profile.skills?.length || !profile.experiences?.length) {
+        router.push(`/resume?returnTo=${encodeURIComponent(`/jobs/${id}`)}`);
+        return;
+      }
+      if (!window.confirm("Confirmar candidatura para esta vaga?")) return;
+      await taskApi.apply(id);
+      setIsApplied(true);
+      setApplicationMessage("Candidatura enviada com sucesso!");
+    } catch (cause) {
+      setApplicationMessage(cause instanceof Error ? cause.message : "Não foi possível enviar a candidatura.");
+    } finally { setApplying(false); }
+  }
+
   function handleAlterarStatus(appId: string, novoStatus: string) {
     setCandidaturas(
       candidaturas.map((c) =>
@@ -167,6 +190,11 @@ export default function VagaDetalhePage({
               <p className="text-ink leading-relaxed whitespace-pre-line">
                 {task.description}
               </p>
+              <button type="button" disabled={applying || isApplied} onClick={applyToTask}
+                className="rounded-lg bg-[#925807] px-4 py-2 text-white disabled:opacity-50">
+                {isApplied ? "Inscrito" : applying ? "Enviando…" : "Candidatar-se"}
+              </button>
+              {applicationMessage && <p role="status">{applicationMessage}</p>}
             </div>
           )}
 
