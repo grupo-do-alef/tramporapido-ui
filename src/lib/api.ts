@@ -93,6 +93,28 @@ export function getUserRoles(): string[] {
   }
 }
 
+async function extractErrorMessage(response: Response): Promise<string> {
+  const fallback = `Erro ${response.status} ao comunicar com o serviço.`;
+  const contentType = response.headers.get("content-type") ?? "";
+
+  // Páginas HTML (ex.: 404 do próprio Next) nunca devem ir para a tela.
+  if (contentType.includes("text/html")) return fallback;
+
+  const body = await response.text();
+  if (!body) return fallback;
+
+  if (contentType.includes("application/json")) {
+    try {
+      const data = JSON.parse(body);
+      return data?.message || data?.error || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return body.trimStart().startsWith("<") ? fallback : body;
+}
+
 async function request<T>(
   baseUrl: string,
   path: string,
@@ -188,7 +210,7 @@ export const userApi = {
       body: JSON.stringify(data),
     });
   },
-  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/users/me/profile"),
+  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/api/users/me/profile"),
   saveProfile: (profile: { education: unknown[]; skills: string[]; experiences: unknown[] }) =>
-    request(USER_API_URL, "/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
+    request(USER_API_URL, "/api/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
 };
