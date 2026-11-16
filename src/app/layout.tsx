@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header/header";
@@ -32,7 +33,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white text-ink">
         <Header />
         <div className="mx-auto flex w-full max-w-full flex-1 flex-col items-start gap-6 p-4 sm:flex-row sm:p-6">
-          <CandidateSideBar />
+          <Suspense fallback={null}>
+            <CandidateSideBar />
+          </Suspense>
           <main className="w-full min-w-0 flex-1 flex flex-col gap-5">
             {children}
           </main>

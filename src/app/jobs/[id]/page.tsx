@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, useEffect } from "react";
+import { Suspense, useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { taskApi, userApi } from "@/lib/api";
@@ -28,11 +28,17 @@ interface TaskData {
   income?: number;
 }
 
-export default function VagaDetalhePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+type VagaDetalheProps = { params: Promise<{ id: string }> };
+
+export default function VagaDetalhePage({ params }: VagaDetalheProps) {
+  return (
+    <Suspense fallback={<p role="status">Carregando vaga…</p>}>
+      <VagaDetalhe params={params} />
+    </Suspense>
+  );
+}
+
+function VagaDetalhe({ params }: VagaDetalheProps) {
   const router = useRouter();
   const { id } = use(params);
 

@@ -122,7 +122,8 @@ async function request<T>(
   }
 
   if (!response.ok) {
-    const body = await response.text();
+    const contentType = response.headers.get("content-type") ?? "";
+    const body = contentType.includes("text/html") ? "" : await response.text();
     throw new Error(
       body || `Erro ${response.status} ao comunicar com o serviço.`,
     );
