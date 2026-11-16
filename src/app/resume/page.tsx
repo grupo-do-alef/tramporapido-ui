@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { userApi } from "@/lib/api";
@@ -57,6 +57,14 @@ const defaultResume: ResumeFormValues = {
 };
 
 export default function ResumePage() {
+  return (
+    <Suspense fallback={<p role="status">Carregando currículo…</p>}>
+      <ResumeForm />
+    </Suspense>
+  );
+}
+
+function ResumeForm() {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [step, setStep] = useState<"education" | "experience" | "saved">(
