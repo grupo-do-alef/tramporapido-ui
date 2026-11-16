@@ -1,14 +1,19 @@
 "use client";
 
+import { getUserProfile } from "@/lib/api";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-interface CandidateSidebarProps {
-  active?: "resume" | "jobs";
-}
+export default function CandidateSidebar() {
+  const pathname = usePathname();
+  const user = getUserProfile();
 
-export default function CandidateSidebar({
-  active = "resume",
-}: CandidateSidebarProps) {
+  const activeJobs = pathname?.startsWith("/jobs");
+  const activeApplications = pathname?.startsWith("/applications");
+  const activeResume = pathname?.startsWith("/resume");
+
+  const isProfileComplete = Boolean(user?.name);
+
   return (
     <aside
       id="candidate-menu"
@@ -16,14 +21,17 @@ export default function CandidateSidebar({
       lang="pt-BR"
     >
       <p className="m-0 mb-3 font-medium text-[#2d0f0f]">Seu próximo passo</p>
-      <h2 className="m-0 text-2xl font-semibold text-[#925807]">Olá, Ana</h2>
+
+      <h2 className="m-0 text-2xl font-semibold text-[#925807]">
+        {user?.name ? `Olá, ${user.name.split(" ")[0]}` : "Olá, visitante"}
+      </h2>
 
       <nav aria-label="Área do candidato" className="mt-4 grid gap-3">
         <Link
           href="/jobs"
-          aria-current={active === "jobs" ? "page" : undefined}
+          aria-current={activeJobs ? "page" : undefined}
           className={`flex min-h-[44px] items-center justify-center rounded-lg border p-2 text-center font-medium no-underline transition-colors ${
-            active === "jobs"
+            activeJobs
               ? "border-[#925807] bg-[#925807] text-white"
               : "border-[#925807] bg-white text-[#925807] hover:bg-[#ffeed2]/60"
           }`}
@@ -31,19 +39,23 @@ export default function CandidateSidebar({
           Buscar vagas
         </Link>
 
-        <button
-          type="button"
-          disabled
-          className="flex min-h-[44px] cursor-not-allowed items-center justify-center rounded-lg border border-neutral-300 bg-neutral-100 p-2 text-center font-medium text-neutral-400"
+        <Link
+          href="/applications"
+          aria-current={activeApplications ? "page" : undefined}
+          className={`flex min-h-[44px] items-center justify-center rounded-lg border p-2 text-center font-medium no-underline transition-colors ${
+            activeApplications
+              ? "border-[#925807] bg-[#925807] text-white"
+              : "border-[#925807] bg-white text-[#925807] hover:bg-[#ffeed2]/60"
+          }`}
         >
           Minhas candidaturas
-        </button>
+        </Link>
 
         <Link
           href="/resume"
-          aria-current={active === "resume" ? "page" : undefined}
+          aria-current={activeResume ? "page" : undefined}
           className={`flex min-h-[44px] items-center justify-center rounded-lg border p-2 text-center font-medium no-underline transition-colors ${
-            active === "resume"
+            activeResume
               ? "border-[#925807] bg-[#925807] text-white"
               : "border-[#925807] bg-white text-[#925807] hover:bg-[#ffeed2]/60"
           }`}
@@ -52,11 +64,19 @@ export default function CandidateSidebar({
         </Link>
       </nav>
 
-      <p className="mt-4 mb-0 text-xs leading-4 text-[#2d0f0f]">
-        <strong className="font-semibold">Currículo atualizado</strong>
-        <br />
-        Seus dados estão com você.
-      </p>
+      {isProfileComplete ? (
+        <p className="mt-4 mb-0 text-xs leading-4 text-[#2d0f0f]">
+          <strong className="font-semibold">Currículo atualizado</strong>
+          <br />
+          Seus dados estão com você.
+        </p>
+      ) : (
+        <p className="mt-4 mb-0 text-xs leading-4 font-medium text-red-600">
+          <strong className="font-semibold">Currículo não preenchido</strong>
+          <br />
+          Complete seus dados no perfil.
+        </p>
+      )}
     </aside>
   );
 }

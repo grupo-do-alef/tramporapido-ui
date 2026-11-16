@@ -21,6 +21,42 @@ function getTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[2]) : null;
 }
 
+export function getUserProfile(): { name?: string; email?: string } {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const nameMatch = document.cookie.match(/(^|;\s*)userName=([^;]*)/);
+    const emailMatch = document.cookie.match(/(^|;\s*)userEmail=([^;]*)/);
+
+    const name = nameMatch ? decodeURIComponent(nameMatch[2]) : undefined;
+    const email = emailMatch ? decodeURIComponent(emailMatch[2]) : undefined;
+
+    if (!name) {
+      const token = getTokenFromCookie();
+      if (token) {
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = JSON.parse(
+          decodeURIComponent(
+            atob(base64)
+              .split("")
+              .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+              .join(""),
+          ),
+        );
+        return {
+          name: jsonPayload.name,
+          email: jsonPayload.sub || jsonPayload.email,
+        };
+      }
+    }
+
+    return { name, email };
+  } catch (e) {
+    return {};
+  }
+}
+
 export function getUserRoles(): string[] {
   if (typeof window === "undefined") return [];
 
@@ -122,6 +158,14 @@ export const userApi = {
 
       if (data.roles) {
         document.cookie = `roles=${JSON.stringify(data.roles)}; path=/; max-age=604800; SameSite=Lax`;
+      }
+
+      if (data.name) {
+        document.cookie = `userName=${encodeURIComponent(data.name)}; path=/; max-age=604800; SameSite=Lax`;
+      }
+
+      if (data.email) {
+        document.cookie = `userEmail=${encodeURIComponent(data.email)}; path=/; max-age=604800; SameSite=Lax`;
       }
     }
 
