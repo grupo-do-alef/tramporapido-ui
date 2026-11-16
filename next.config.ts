@@ -4,8 +4,21 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        destination: "http://localhost:8080/api/:path*",
+        source: "/api/auth/:path*",
+        destination: "http://localhost:8080/api/auth/:path*",
+      },
+      {
+        source: "/api/users/:path*",
+        destination: "http://localhost:8080/api/users/:path*",
+      },
+      {
+        source: "/api/register",
+        destination: "http://localhost:8080/api/register",
+      },
+
+      {
+        source: "/tasks/:path*",
+        destination: "http://localhost:8081/tasks/:path*",
       },
     ];
   },
