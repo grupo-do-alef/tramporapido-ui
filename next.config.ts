@@ -8,14 +8,18 @@ const nextConfig: NextConfig = {
         destination: "http://localhost:8080/api/auth/:path*",
       },
       {
-        source: "/api/users/:path*",
-        destination: "http://localhost:8080/api/users/:path*",
+        source: "/users/:path*",
+        destination: "http://localhost:8080/users/:path*",
       },
       {
         source: "/api/register",
         destination: "http://localhost:8080/api/register",
       },
 
+      {
+        source: "/task-api/:path*",
+        destination: "http://localhost:8081/:path*",
+      },
       {
         source: "/tasks/:path*",
         destination: "http://localhost:8081/tasks/:path*",

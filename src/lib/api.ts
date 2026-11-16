@@ -1,4 +1,4 @@
-const TASK_API_URL = process.env.NEXT_PUBLIC_TASK_API_URL ?? "";
+const TASK_API_URL = process.env.NEXT_PUBLIC_TASK_API_URL || "/task-api";
 const USER_API_URL = process.env.NEXT_PUBLIC_USER_API_URL ?? "";
 
 export type Task = {
@@ -210,7 +210,7 @@ export const userApi = {
       body: JSON.stringify(data),
     });
   },
-  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/api/users/me/profile"),
+  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/users/me/profile"),
   saveProfile: (profile: { education: unknown[]; skills: string[]; experiences: unknown[] }) =>
-    request(USER_API_URL, "/api/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
+    request(USER_API_URL, "/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
 };
