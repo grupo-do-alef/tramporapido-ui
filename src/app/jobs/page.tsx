@@ -165,7 +165,7 @@ export default function JobsPage() {
                   Detalhes
                 </Link>
                 <Link
-                  href="/candidaturas"
+                  href="/applications"
                   className="box-border inline-flex min-h-[36px] sm:min-h-[36px] w-full sm:w-auto items-center justify-center rounded-md border border-ink bg-ink px-3.5 py-1.5 text-[13px] font-semibold text-white no-underline transition-all hover:brightness-92"
                 >
                   Candidaturas
