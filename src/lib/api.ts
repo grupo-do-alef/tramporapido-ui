@@ -23,6 +23,11 @@ function getTokenFromCookie(): string | null {
   return match ? decodeURIComponent(match[2]) : null;
 }
 
+export function isAuthenticated(): boolean {
+  const token = getTokenFromCookie();
+  return !!token && token.trim() !== "";
+}
+
 export function getUserProfile(): { name?: string; email?: string } {
   if (typeof window === "undefined") return {};
 
@@ -95,28 +100,6 @@ export function getUserRoles(): string[] {
   }
 }
 
-async function extractErrorMessage(response: Response): Promise<string> {
-  const fallback = `Erro ${response.status} ao comunicar com o serviço.`;
-  const contentType = response.headers.get("content-type") ?? "";
-
-  // Páginas HTML (ex.: 404 do próprio Next) nunca devem ir para a tela.
-  if (contentType.includes("text/html")) return fallback;
-
-  const body = await response.text();
-  if (!body) return fallback;
-
-  if (contentType.includes("application/json") || contentType.includes("+json")) {
-    try {
-      const data = JSON.parse(body);
-      return data?.detail || data?.message || data?.error || fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  return body.trimStart().startsWith("<") ? fallback : body;
-}
-
 async function request<T>(
   baseUrl: string,
   path: string,
@@ -161,10 +144,15 @@ export const taskApi = {
       body: JSON.stringify(task),
     }),
   getById: (id: string) => request<Task>(TASK_API_URL, `/tasks/${id}`),
-  apply: (taskId: string) => request<{ id: string; status: string }>(TASK_API_URL, "/applications", {
-    method: "POST", body: JSON.stringify({ taskId }),
-  }),
-  myApplications: () => request<{ id: string; taskId: string; status: string; dateApplication: string }[]>(TASK_API_URL, "/applications/mine"),
+  apply: (taskId: string) =>
+    request<{ id: string; status: string }>(TASK_API_URL, "/applications", {
+      method: "POST",
+      body: JSON.stringify({ taskId }),
+    }),
+  myApplications: () =>
+    request<
+      { id: string; taskId: string; status: string; dateApplication: string }[]
+    >(TASK_API_URL, "/applications/mine"),
 };
 
 export const userApi = {
@@ -179,11 +167,8 @@ export const userApi = {
       body: JSON.stringify({ email, password }),
     });
 
-    if (!data?.accessToken) {
-      throw new Error("O serviço de usuários não retornou um token de sessão.");
-    }
-
-    if (typeof window !== "undefined") {
+    if (data?.accessToken && typeof window !== "undefined") {
+      document.cookie = "token=; path=/; max-age=0";
       document.cookie = `token=${data.accessToken}; path=/; max-age=604800; SameSite=Lax`;
 
       if (data.roles) {
@@ -213,7 +198,18 @@ export const userApi = {
       body: JSON.stringify(data),
     });
   },
-  getProfile: () => request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(USER_API_URL, "/users/me/profile"),
-  saveProfile: (profile: { education: unknown[]; skills: string[]; experiences: unknown[] }) =>
-    request(USER_API_URL, "/users/me/profile", { method: "PUT", body: JSON.stringify(profile) }),
+  getProfile: () =>
+    request<{ education: unknown[]; skills: string[]; experiences: unknown[] }>(
+      USER_API_URL,
+      "/users/me/profile",
+    ),
+  saveProfile: (profile: {
+    education: unknown[];
+    skills: string[];
+    experiences: unknown[];
+  }) =>
+    request(USER_API_URL, "/users/me/profile", {
+      method: "PUT",
+      body: JSON.stringify(profile),
+    }),
 };
