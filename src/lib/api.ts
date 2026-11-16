@@ -115,11 +115,16 @@ async function request<T>(
     ...(init?.headers as Record<string, string>),
   };
 
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+    });
+  } catch (cause) {
+    throw new Error("Não foi possível conectar ao serviço. Tente novamente em alguns instantes.", { cause });
+  }
 
   if ((response.status === 401 || response.status === 403) && !isPublicUserRequest) {
     if (typeof window !== "undefined") {
