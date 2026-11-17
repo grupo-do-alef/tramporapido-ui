@@ -100,6 +100,27 @@ export function getUserRoles(): string[] {
   }
 }
 
+async function extractErrorMessage(response: Response): Promise<string> {
+  const fallback = `Erro ${response.status} ao comunicar com o serviço.`;
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("text/html")) return fallback;
+
+  const body = await response.text();
+  if (!body) return fallback;
+
+  if (contentType.includes("application/json")) {
+    try {
+      const data = JSON.parse(body);
+      return data?.message || data?.error || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return body.trimStart().startsWith("<") ? fallback : body;
+}
+
 async function request<T>(
   baseUrl: string,
   path: string,
@@ -111,7 +132,9 @@ async function request<T>(
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(!isPublicUserRequest && token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(!isPublicUserRequest && token
+      ? { Authorization: `Bearer ${token}` }
+      : {}),
     ...(init?.headers as Record<string, string>),
   };
 
@@ -121,7 +144,10 @@ async function request<T>(
     credentials: "include",
   });
 
-  if ((response.status === 401 || response.status === 403) && !isPublicUserRequest) {
+  if (
+    (response.status === 401 || response.status === 403) &&
+    !isPublicUserRequest
+  ) {
     if (typeof window !== "undefined") {
       document.cookie = "token=; path=/; max-age=0";
       window.location.href = "/login";
