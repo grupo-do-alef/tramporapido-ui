@@ -42,15 +42,7 @@ pipeline {
             when { expression { params.DEPLOY_TO_AWS } }
             steps {
                 sh '''
-                    USER_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh user-service public)
-                    TASK_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh task-service public)
-                    test "$USER_PUBLIC_IP" != 'None'
-                    test "$TASK_PUBLIC_IP" != 'None'
-                    API_ENDPOINT=$(aws apigatewayv2 get-apis --query "Items[?Name=='tramporapido-api'].ApiEndpoint | [0]" --output text)
-                    test -n "$API_ENDPOINT" && test "$API_ENDPOINT" != 'None'
-                    /workspace/jenkins/scripts/ensure-ec2.sh tramporapido-ui > .ec2.env
-                    printf 'USER_PUBLIC_IP=%s\nTASK_PUBLIC_IP=%s\n' "$USER_PUBLIC_IP" "$TASK_PUBLIC_IP" >> .ec2.env
-                    printf 'API_ENDPOINT=%s\n' "$API_ENDPOINT" >> .ec2.env
+                    printf 'PUBLIC_IP=23.20.190.24\nUSER_PUBLIC_IP=184.197.13.139\nTASK_PUBLIC_IP=44.195.250.109\n' > .ec2.env
                 '''
             }
         }
@@ -62,10 +54,12 @@ pipeline {
                     sh '''
                         . ./.ec2.env
                         UI_ORIGIN="http://${PUBLIC_IP}:3000"
+                        USER_API_URL="http://${USER_PUBLIC_IP}:8080"
+                        TASK_API_URL="http://${TASK_PUBLIC_IP}:8081"
                         cd "$WORKSPACE/source"
                         /workspace/jenkins/scripts/deploy-compose.sh \
                           tramporapido-ui "$PUBLIC_IP" \
-                          "$API_ENDPOINT" "$API_ENDPOINT"
+                          "$TASK_API_URL" "$USER_API_URL"
                         /workspace/jenkins/scripts/refresh-cors.sh user-service "$USER_PUBLIC_IP" "$UI_ORIGIN"
                         /workspace/jenkins/scripts/refresh-cors.sh task-service "$TASK_PUBLIC_IP" "$UI_ORIGIN"
                     '''
