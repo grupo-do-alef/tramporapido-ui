@@ -224,7 +224,7 @@ export const userApi = {
     password: string;
     roles: ("WORKER" | "EMPLOYER")[];
   }) => {
-    return request<any>(USER_API_URL, "/api/register", {
+    return request<{ id: string; name: string; email: string }>(USER_API_URL, "/api/register", {
       method: "POST",
       body: JSON.stringify(data),
     });

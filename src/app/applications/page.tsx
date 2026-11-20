@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/use-session";
 
 interface Application {
   id: string;
@@ -19,7 +20,7 @@ export default function Applications() {
   const [list, setList] = useState<Application[]>();
   const [statusFilter, setStatusFilter] = useState("Todas");
   const [selected, setSelected] = useState<Application | null>(null);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const { isAuthorized } = useSession();
 
   useEffect(() => {
     const hasToken = document.cookie.includes("token=");
@@ -29,7 +30,6 @@ export default function Applications() {
       return;
     }
 
-    setIsAuthorized(true);
   }, [router]);
 
   if (!isAuthorized) {

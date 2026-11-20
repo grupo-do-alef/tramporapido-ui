@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/use-session";
 import Link from "next/link";
 import styles from "./duvidas.module.css";
 
@@ -37,7 +38,7 @@ const initialQuestions: Question[] = [
 
 export default function JobQuestionsView() {
   const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const { isAuthorized } = useSession();
 
   const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   const [newQuestion, setNewQuestion] = useState("");
@@ -52,7 +53,6 @@ export default function JobQuestionsView() {
       return;
     }
 
-    setIsAuthorized(true);
   }, [router]);
 
   if (!isAuthorized) {
