@@ -46,8 +46,11 @@ pipeline {
                     TASK_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh task-service public)
                     test "$USER_PUBLIC_IP" != 'None'
                     test "$TASK_PUBLIC_IP" != 'None'
+                    API_ENDPOINT=$(aws apigatewayv2 get-apis --query "Items[?Name=='tramporapido-api'].ApiEndpoint | [0]" --output text)
+                    test -n "$API_ENDPOINT" && test "$API_ENDPOINT" != 'None'
                     /workspace/jenkins/scripts/ensure-ec2.sh tramporapido-ui > .ec2.env
                     printf 'USER_PUBLIC_IP=%s\nTASK_PUBLIC_IP=%s\n' "$USER_PUBLIC_IP" "$TASK_PUBLIC_IP" >> .ec2.env
+                    printf 'API_ENDPOINT=%s\n' "$API_ENDPOINT" >> .ec2.env
                 '''
             }
         }
