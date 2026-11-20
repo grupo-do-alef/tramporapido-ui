@@ -42,15 +42,7 @@ pipeline {
             when { expression { params.DEPLOY_TO_AWS } }
             steps {
                 sh '''
-                    USER_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh user-service public)
-                    TASK_PUBLIC_IP=$(/workspace/jenkins/scripts/service-ip.sh task-service public)
-                    test "$USER_PUBLIC_IP" != 'None'
-                    test "$TASK_PUBLIC_IP" != 'None'
-                    API_ENDPOINT=$(aws apigatewayv2 get-apis --query "Items[?Name=='tramporapido-api'].ApiEndpoint | [0]" --output text)
-                    test -n "$API_ENDPOINT" && test "$API_ENDPOINT" != 'None'
-                    /workspace/jenkins/scripts/ensure-ec2.sh tramporapido-ui > .ec2.env
-                    printf 'USER_PUBLIC_IP=%s\nTASK_PUBLIC_IP=%s\n' "$USER_PUBLIC_IP" "$TASK_PUBLIC_IP" >> .ec2.env
-                    printf 'API_ENDPOINT=%s\n' "$API_ENDPOINT" >> .ec2.env
+                    printf 'PUBLIC_IP=23.20.190.24\nUSER_PUBLIC_IP=184.197.13.139\nTASK_PUBLIC_IP=44.195.250.109\nAPI_ENDPOINT=https://4494lblj6d.execute-api.us-east-1.amazonaws.com\n' > .ec2.env
                 '''
             }
         }
