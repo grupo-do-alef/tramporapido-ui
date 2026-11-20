@@ -489,7 +489,7 @@ function ResumeForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-ink bg-ink px-6 text-sm font-semibold text-white transition-all hover:brightness-95 disabled:cursor-wait disabled:opacity-60"
+              className="primary-action inline-flex min-h-11 items-center justify-center rounded-lg px-6 text-sm font-semibold enabled:cursor-pointer enabled:hover:brightness-95"
             >
               {isSubmitting ? "Salvando currículo…" : "Salvar currículo"}
             </button>

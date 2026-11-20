@@ -197,7 +197,7 @@ function VagaDetalhe({ params }: VagaDetalheProps) {
                 {task.description}
               </p>
               <button type="button" disabled={applying || isApplied} onClick={applyToTask}
-                className="rounded-lg bg-[#925807] px-4 py-2 text-white disabled:opacity-50">
+                className="primary-action rounded-lg px-4 py-2 font-semibold enabled:cursor-pointer enabled:hover:brightness-95">
                 {isApplied ? "Inscrito" : applying ? "Enviando…" : "Candidatar-se"}
               </button>
               {applicationMessage && <p role="status">{applicationMessage}</p>}
