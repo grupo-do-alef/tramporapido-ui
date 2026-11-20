@@ -42,7 +42,7 @@ pipeline {
             when { expression { params.DEPLOY_TO_AWS } }
             steps {
                 sh '''
-                    printf 'PUBLIC_IP=23.20.190.24\nUSER_PUBLIC_IP=184.197.13.139\nTASK_PUBLIC_IP=44.195.250.109\nAPI_ENDPOINT=https://4494lblj6d.execute-api.us-east-1.amazonaws.com\n' > .ec2.env
+                    printf 'PUBLIC_IP=23.20.190.24\nUSER_PUBLIC_IP=184.197.13.139\nTASK_PUBLIC_IP=44.195.250.109\n' > .ec2.env
                 '''
             }
         }
@@ -54,10 +54,12 @@ pipeline {
                     sh '''
                         . ./.ec2.env
                         UI_ORIGIN="http://${PUBLIC_IP}:3000"
+                        USER_API_URL="http://${USER_PUBLIC_IP}:8080"
+                        TASK_API_URL="http://${TASK_PUBLIC_IP}:8081"
                         cd "$WORKSPACE/source"
                         /workspace/jenkins/scripts/deploy-compose.sh \
                           tramporapido-ui "$PUBLIC_IP" \
-                          "$API_ENDPOINT" "$API_ENDPOINT"
+                          "$TASK_API_URL" "$USER_API_URL"
                         /workspace/jenkins/scripts/refresh-cors.sh user-service "$USER_PUBLIC_IP" "$UI_ORIGIN"
                         /workspace/jenkins/scripts/refresh-cors.sh task-service "$TASK_PUBLIC_IP" "$UI_ORIGIN"
                     '''
