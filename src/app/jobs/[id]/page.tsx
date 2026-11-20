@@ -2,6 +2,7 @@
 
 import { Suspense, useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/use-session";
 import Link from "next/link";
 import { taskApi, userApi } from "@/lib/api";
 
@@ -42,7 +43,7 @@ function VagaDetalhe({ params }: VagaDetalheProps) {
   const router = useRouter();
   const { id } = use(params);
 
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const { isAuthorized } = useSession();
   const [loading, setLoading] = useState(true);
   const [task, setTask] = useState<TaskData | null>(null);
   const [error, setError] = useState("");
@@ -66,7 +67,6 @@ function VagaDetalhe({ params }: VagaDetalheProps) {
       return;
     }
 
-    setIsAuthorized(true);
 
     taskApi.myApplications().then((items) => setIsApplied(items.some((item) => item.taskId === id))).catch(() => undefined);
 

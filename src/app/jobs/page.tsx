@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { taskApi, getUserRoles, type Task } from "@/lib/api";
+import { taskApi, type Task } from "@/lib/api";
+import { useSession } from "@/lib/use-session";
 import { useRouter } from "next/navigation";
 
 const modalityLabel: Record<Task["modality"], string> = {
@@ -18,7 +19,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isEmployer, setIsEmployer] = useState(false);
+  const { isEmployer } = useSession();
 
   useEffect(() => {
     const hasToken = document.cookie.includes("token=");
@@ -28,8 +29,6 @@ export default function JobsPage() {
       return;
     }
 
-    const roles = getUserRoles();
-    setIsEmployer(roles.some((r) => r.toUpperCase().includes("EMPLOYER")));
 
     taskApi
       .list()
