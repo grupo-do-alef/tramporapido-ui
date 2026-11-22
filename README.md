@@ -112,5 +112,6 @@ docker compose down
 
 - [Readme user-service](https://github.com/grupo-do-alef/user-service/blob/main/README.md)
 - [Readme task-service](https://github.com/grupo-do-alef/task-service/blob/main/README.md)
-- [Casos de teste e instruções de execução](https://github.com/grupo-do-alef/user-service/blob/main/testes.md)
+- [User-service_Casos de teste e instruções de execução](https://github.com/grupo-do-alef/user-service/blob/main/testes.md)
+- [Task-service_Casos de teste e instruções de execução](https://github.com/grupo-do-alef/task-service/blob/main/testes.md)
 
