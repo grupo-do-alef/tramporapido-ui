@@ -1,60 +1,76 @@
-Teste
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TrampoRápido — Interface Web
 
-## Telas do representante
+Interface do TrampoRápido para cadastro, acesso, currículo, consulta de vagas e candidaturas.
 
-Referência local: `tramporapido.fig` (exportação de 27/10/2026).
+## Contexto e papel no projeto
 
-- `/jobs/register`: frame `4:18328`, com data e exemplo demonstrativos do Figma.
-- `/jobs/publicada`: frame `4:18595`, com o resumo e as ações da vaga publicada.
+O TrampoRápido conecta profissionais a oportunidades de trabalho. O sistema é composto por três repositórios:
 
-O layout desktop segue o frame de 1200 × 840, com rolagem no formulário longo.
-As duas telas compartilham o cabeçalho, o menu e os estilos. O link Registrar vaga
-funciona; ações para telas futuras permanecem desabilitadas. A página publicada
-usa os dados fictícios do protótipo e não representa confirmação de uma API.
+| Repositório | Responsabilidade |
+| --- | --- |
+| tramporapido-ui | Experiência web e comunicação com as APIs. |
+| user-service | Cadastro, autenticação por JWT, dados dos usuários e currículos. |
+| task-service | Vagas, candidaturas e dúvidas. |
 
-A tela está disponível em `/jobs/register`, conforme o frame `4:18328` do Figma.
-Inclui formulário responsivo, campos obrigatórios, validação de salário,
-preenchimento de exemplo e confirmação para descartar os dados ao cancelar.
-O menu pode ser recolhido; os destinos de outras telas estão desabilitados.
-Continuar valida o formulário, mas não publica nem persiste uma vaga:
-revisão, publicação e integração com a API ficam para uma próxima entrega.
+Este repositório apresenta os fluxos aos candidatos e contratantes. A interface não acessa PostgreSQL diretamente: usa as APIs dos dois serviços, cada um com seu banco próprio.
 
-Para conferir: execute `npm ci`, `npm run lint` e `npm run build`.
-No navegador, verifique a rota em desktop e celular, envie o formulário vazio,
-preencha o exemplo e teste cancelar com confirmação e sem confirmação.
+## Tecnologias
 
-## Getting Started
+Versões declaradas no package.json:
 
-First, run the development server:
+- Next.js ^16.4.3 com App Router.
+- React e React DOM 19.3.0.
+- TypeScript ^5.
+- Tailwind CSS 4, PostCSS e CSS Modules.
+- React Hook Form ^7.92.0.
+- ESLint 9 e React Compiler.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+O Dockerfile e a pipeline usam Node.js 22. A configuração do Next.js também habilita cacheComponents e partialPrefetching.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Organização
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- src/app: páginas e layout pelo App Router.
+- src/components: cabeçalho e menu lateral compartilhados.
+- src/lib/api.ts: cliente HTTP, tipos e funções de autenticação e acesso às APIs.
+- src/lib/use-session.ts: leitura da sessão para comportamento da interface.
+- public: arquivos estáticos.
+- tramporapido.fig: referência visual local.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Páginas e estado da integração
 
-## Learn More
+| Rota | Papel e comportamento atual |
+| --- | --- |
+| / | Página inicial com atalhos. |
+| /register | Cadastro real pelo user-service. |
+| /login | Login real pelo user-service. |
+| /resume | Consulta e gravação de currículo pela API. |
+| /jobs | Listagem de vagas pela API de tarefas. |
+| /jobs/[id] | Detalhes da vaga, verificação do currículo e tentativa de candidatura. |
+| /jobs/register | Formulário que envia POST /tasks e redireciona ao detalhe criado. |
+| /jobs/[id]/duvidas | Perguntas demonstrativas; novas perguntas ficam apenas no estado React. |
+| /applications | Interface de acompanhamento sem consulta à API; mudanças de status são locais. |
+| /about | Informações sobre o projeto. |
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+O formulário envia título, descrição, cidade, bairro, status, modalidade, data de abertura e remuneração. 
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Fluxo entre os repositórios
 
-## Deploy on Vercel
+~~~text
+Navegador / Next.js
+  ├─ cadastro, login e currículo → user-service → PostgreSQL de usuários
+  └─ vagas e candidaturas       → task-service → PostgreSQL de tarefas
+                                     └─ consulta identidade no user-service
+~~~
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. O cadastro envia nome, e-mail, senha e papéis para POST /api/register.
+2. O login usa POST /api/auth/login e recebe accessToken, nome, e-mail e papéis.
+3. A interface guarda o token e os dados de exibição em cookies acessíveis por JavaScript.
+4. O cliente HTTP acrescenta Authorization: Bearer nas chamadas protegidas e usa credentials: include.
+5. Antes de candidatar-se, a página consulta o currículo; quando necessário, encaminha para /resume com retorno à vaga.
+6. A candidatura envia o taskId para POST /applications; o backend deve obter a identidade do candidato pela autenticação.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Limitações atuais
+- O projeto contempla apenas 3 casos de uso que estabelecemos anteriormente em outra entrega, o que torna a navegação funcional incompleta.
+- A interface depende do user-service para cadastro, login e currículo, e do task-service para vagas e candidaturas. Não acessa os bancos diretamente. Iniciar a interface não inicia os backends.
