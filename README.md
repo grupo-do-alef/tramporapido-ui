@@ -74,3 +74,43 @@ Navegador / Next.js
 ## Limitações atuais
 - O projeto contempla apenas 3 casos de uso que estabelecemos anteriormente em outra entrega, o que torna a navegação funcional incompleta.
 - A interface depende do user-service para cadastro, login e currículo, e do task-service para vagas e candidaturas. Não acessa os bancos diretamente. Iniciar a interface não inicia os backends.
+
+
+## Instalação
+
+Instale Docker com Compose (Docker Desktop no Windows). Na pasta deste repositório, no PowerShell:
+
+~~~powershell
+Copy-Item .env.example .env
+~~~
+
+No .env, defina DB_NAME, DB_USER, DB_PASSWORD e JWT_SECRET. Substitua a senha de exemplo e use chave JWT de pelo menos 32 bytes. Depois:
+
+~~~powershell
+docker compose up -d --build
+~~~
+
+O Compose inicia **somente esta API e seu banco**. API: http://localhost:8080; banco: localhost:5432. APP_PORT altera a porta publicada e CORS_ALLOWED_ORIGIN define a origem da interface (padrão http://localhost:3000).
+
+## Utilização
+
+1. Cadastre uma conta pela interface em /register ou por POST /api/register, enviando name, email, password e roles (WORKER ou EMPLOYER para os fluxos da interface).
+2. Entre em /login ou use POST /api/auth/login; a API retorna accessToken.
+3. Nas chamadas protegidas, envie Authorization: Bearer <token>.
+4. Consulte ou atualize o currículo por GET/PUT /users/me/profile. A gravação exige escolaridade, habilidades e experiências preenchidas. GET /users/{id} consulta os dados de um usuário.
+
+Para acompanhar logs ou parar preservando os dados:
+
+~~~powershell
+docker compose logs -f app
+docker compose down
+~~~
+
+**Limitação:** o task-service espera GET /api/auth/me, ainda ausente neste serviço. A integração de operações protegidas entre os dois backends está incompleta.
+
+## Documentação e testes
+
+- [Readme user-service](https://github.com/grupo-do-alef/user-service/blob/main/README.md)
+- [Readme task-service](https://github.com/grupo-do-alef/task-service/blob/main/README.md)
+- [Casos de teste e instruções de execução](https://github.com/grupo-do-alef/user-service/blob/main/testes.md)
+
